@@ -24,7 +24,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Search: undefined;
-  Jobs: undefined;
+  Jobs: { searchQuery?: string; searchLocation?: string } | undefined;
   Profile: undefined;
 };
 

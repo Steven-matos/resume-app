@@ -16,7 +16,8 @@ import { jobApiService } from '../utils/jobApi';
  */
 export default function AdminDebugPanel() {
   const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   // Only show in development mode
@@ -25,44 +26,69 @@ export default function AdminDebugPanel() {
   }
 
   /**
-   * Load admin statistics
+   * Load and display API statistics
    */
   const loadStats = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const adminStats = await jobApiService._getAdminStats();
       setStats(adminStats);
     } catch (error) {
-      console.warn('[ADMIN] Failed to load stats:', error);
+      console.error('Failed to load admin stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
   /**
-   * Clear cache (admin only)
+   * Clear all cached data
    */
-  const handleClearCache = () => {
-    Alert.alert(
-      '[ADMIN] Clear Cache',
-      'This will remove all cached job data across the entire app.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await jobApiService._clearCacheAdmin();
-              Alert.alert('[ADMIN] Success', 'Cache cleared successfully');
-              loadStats();
-            } catch (error) {
-              Alert.alert('[ADMIN] Error', 'Failed to clear cache');
-            }
-          },
-        },
-      ]
-    );
+  const clearCache = async () => {
+    setClearingCache(true);
+    try {
+      await jobApiService.clearAllCachedData();
+      Alert.alert('Cache Cleared', 'All cached job data has been cleared. Next API calls will fetch fresh data.');
+      // Reload stats after clearing cache
+      await loadStats();
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      Alert.alert('Error', 'Failed to clear cache. Check console for details.');
+    } finally {
+      setClearingCache(false);
+    }
+  };
+
+  /**
+   * Test API connection
+   */
+  const testApi = async () => {
+    setLoading(true);
+    try {
+      const response = await jobApiService.searchJobs({
+        query: 'software engineer',
+        limit: 1
+      });
+
+      if (response.jobs.length > 0) {
+        Alert.alert(
+          'API Test Successful',
+          `Successfully fetched ${response.jobs.length} job(s). API is working correctly.`
+        );
+      } else {
+        Alert.alert(
+          'API Test - No Results',
+          'API call succeeded but returned no jobs. This might be normal depending on search terms.'
+        );
+      }
+         } catch (error) {
+       console.error('API test failed:', error);
+       Alert.alert(
+         'API Test Failed', 
+         `API call failed: ${(error as Error).message || 'Unknown error'}. Check your API key configuration.`
+       );
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -105,11 +131,57 @@ export default function AdminDebugPanel() {
           {/* API Status */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>API Status</Text>
-            <View style={styles.statusRow}>
-              <Text style={styles.label}>JSearch API Key:</Text>
-              <Text style={[styles.value, stats.hasApiKey ? styles.success : styles.error]}>
-                {stats.hasApiKey ? 'Configured' : 'Missing'}
+            <View style={styles.statsContainer}>
+              <Text style={styles.statLabel}>API Key Configured:</Text>
+              <Text style={[styles.statValue, { color: stats.hasApiKey ? '#4CAF50' : '#F44336' }]}>
+                {stats.hasApiKey ? 'Yes' : 'No'}
               </Text>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <Text style={styles.statLabel}>Requests Used:</Text>
+              <Text style={styles.statValue}>
+                {stats.requests.used} / {stats.requests.used + stats.requests.remaining}
+              </Text>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <Text style={styles.statLabel}>Requests Remaining:</Text>
+              <Text style={styles.statValue}>{stats.requests.remaining}</Text>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <Text style={styles.statLabel}>Cache Entries:</Text>
+              <Text style={styles.statValue}>{stats.cache.totalEntries}</Text>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <Text style={styles.statLabel}>Cache Size:</Text>
+              <Text style={styles.statValue}>
+                {(stats.cache.totalSize / 1024).toFixed(1)} KB
+              </Text>
+            </View>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.testButton]}
+                onPress={testApi}
+                disabled={loading}
+              >
+                <Text style={styles.actionButtonText}>
+                  {loading ? 'Testing...' : 'Test API'}
+                </Text>
+              </TouchableOpacity>
+
+                         <TouchableOpacity
+             style={[styles.actionButton, styles.clearCacheButton]}
+             onPress={clearCache}
+             disabled={clearingCache}
+           >
+             <Text style={styles.actionButtonText}>
+               {clearingCache ? 'Clearing...' : 'Clear Cache'}
+             </Text>
+           </TouchableOpacity>
             </View>
           </View>
 
@@ -118,11 +190,11 @@ export default function AdminDebugPanel() {
             <Text style={styles.sectionTitle}>App-Wide Request Usage</Text>
             <View style={styles.usageContainer}>
               <View style={styles.usageBar}>
-                <View 
+                <View
                   style={[
-                    styles.usageFill, 
+                    styles.usageFill,
                     { width: `${Math.min((stats.requests.used / 200) * 100, 100)}%` }
-                  ]} 
+                  ]}
                 />
               </View>
               <View style={styles.usageStats}>
@@ -152,10 +224,10 @@ export default function AdminDebugPanel() {
                 {(stats.cache.totalSize / 1024).toFixed(1)} KB
               </Text>
             </View>
-            
+
             <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClearCache}
+              style={styles.legacyClearButton}
+              onPress={clearCache}
               activeOpacity={0.8}
             >
               <Ionicons name="trash-outline" size={16} color="#FF3B30" />
@@ -327,5 +399,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#856404',
     textAlign: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  testButton: {
+    backgroundColor: '#4CAF50',
+  },
+  clearCacheButton: {
+    backgroundColor: '#FF9800',
+  },
+  legacyClearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF2F2',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FFD6D6',
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

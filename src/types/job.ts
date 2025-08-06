@@ -40,6 +40,7 @@ export interface JobSearchParams {
   jobType?: string;
   experienceLevel?: string;
   remote?: boolean;
+  maxPages?: number; // maximum pages to fetch (default: 10 for all available results)
 }
 
 /**
@@ -50,6 +51,23 @@ export interface JobSearchResponse {
   total: number;
   page: number;
   hasMore: boolean;
+  isLoadingMore?: boolean;
+  allJobsLoaded?: boolean;
+}
+
+/**
+ * Progressive loading state for job results
+ */
+export interface JobLoadingState {
+  displayedJobs: Job[];
+  allJobs: Job[];
+  isLoadingInitial: boolean;
+  isLoadingMore: boolean;
+  isLoadingBackground: boolean;
+  hasMoreToShow: boolean;
+  backgroundLoadComplete: boolean;
+  currentDisplayCount: number;
+  totalAvailable: number;
 }
 
 /**

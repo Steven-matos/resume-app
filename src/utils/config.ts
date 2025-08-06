@@ -24,8 +24,11 @@ export const CONFIG = {
   
   // UI Settings
   REFRESH_INTERVAL: 30000, // 30 seconds
-  MAX_JOBS_PER_PAGE: 20,
-  SEARCH_TIMEOUT: 10000, // 10 seconds
+  MAX_JOBS_PER_PAGE: 100, // Increased to support more comprehensive results
+  MAX_SEARCH_PAGES: 5, // Reduced from 10 to 5 pages to prevent timeouts
+  SEARCH_TIMEOUT: 10000, // 10 seconds (reduced for better reliability)
+  BACKGROUND_REQUEST_TIMEOUT: 8000, // 8 seconds for background requests
+  REQUEST_DELAY: 300, // 300ms delay between requests
 };
 
 /**
