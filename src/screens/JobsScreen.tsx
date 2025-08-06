@@ -85,6 +85,49 @@ export default function JobsScreen() {
   }, [route.params]);
 
   /**
+   * Filters and sorts jobs based on the selected filter
+   * @param jobs - Array of jobs to filter
+   * @param filter - Selected filter type ('all', 'recent', 'high-match')
+   * @returns Filtered and sorted array of jobs
+   */
+  const applyJobFilter = (jobs: Job[], filter: string): Job[] => {
+    console.log(`🔧 applyJobFilter called with filter: ${filter}, jobs count: ${jobs.length}`);
+    
+    switch (filter) {
+      case 'recent':
+        // Sort by posted date (newest first - descending order)
+        const sortedJobs = [...jobs].sort((a, b) => {
+          // Use ISO date for accurate sorting, fallback to postedDate if needed
+          const dateStrA = a.postedDateISO || a.postedDate;
+          const dateStrB = b.postedDateISO || b.postedDate;
+          
+          // Parse dates and compare (newer dates first)
+          const dateA = new Date(dateStrA);
+          const dateB = new Date(dateStrB);
+          
+          // Check if dates are valid
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+            console.warn('Invalid date found:', { dateStrA, dateStrB });
+            return 0; // Keep original order if dates are invalid
+          }
+          
+          const result = dateB.getTime() - dateA.getTime(); // Reversed: B - A for newest first
+          return result;
+        });
+        console.log(`🔧 Recent filter applied. Sample ISO dates:`, sortedJobs.slice(0, 3).map(job => job.postedDateISO || job.postedDate));
+        return sortedJobs;
+      case 'high-match':
+        // Sort by match rate (highest first)
+        return [...jobs].sort((a, b) => b.matchRate - a.matchRate);
+      case 'all':
+      default:
+        // Return jobs in original order
+        console.log(`🔧 All filter applied. Sample dates:`, jobs.slice(0, 3).map(job => job.postedDate));
+        return jobs;
+    }
+  };
+
+  /**
    * Load jobs with progressive loading - show first 10 immediately, load more in background
    */
   const loadJobs = async (refresh = false) => {
@@ -132,14 +175,21 @@ export default function JobsScreen() {
       // Set up progress callback for background loading
       const progressCallback = (allJobs: Job[]) => {
         console.log(`📥 Background loading progress: ${allJobs.length} total jobs available`);
-        setLoadingState(prev => ({
-          ...prev,
-          allJobs,
-          totalAvailable: allJobs.length,
-          hasMoreToShow: allJobs.length > prev.currentDisplayCount,
-          isLoadingBackground: false,
-          backgroundLoadComplete: true,
-        }));
+        setLoadingState(prev => {
+          // Apply current filter to all loaded jobs
+          const filteredJobs = applyJobFilter(allJobs, selectedFilter);
+          
+          const newState = {
+            ...prev,
+            allJobs,
+            totalAvailable: allJobs.length,
+            hasMoreToShow: filteredJobs.length > prev.currentDisplayCount,
+            isLoadingBackground: false,
+            backgroundLoadComplete: true,
+          };
+          console.log(`📄 Updated state: displaying ${prev.currentDisplayCount} of ${filteredJobs.length} filtered jobs (${allJobs.length} total), hasMoreToShow: ${newState.hasMoreToShow}`);
+          return newState;
+        });
       };
 
       const response = await jobApiService.searchJobs({
@@ -152,21 +202,27 @@ export default function JobsScreen() {
 
       console.log(`✅ Received initial ${response.jobs.length} jobs from API for query: "${searchQuery}"${locationText}`);
       
-      // Show first 10 jobs immediately
-      const initialDisplayCount = Math.min(10, response.jobs.length);
-      const initialJobs = response.jobs.slice(0, initialDisplayCount);
+      // Apply current filter to jobs
+      const filteredJobs = applyJobFilter(response.jobs, selectedFilter);
       
-      setLoadingState(prev => ({
-        ...prev,
+      // Show first 10 filtered jobs immediately
+      const initialDisplayCount = Math.min(10, filteredJobs.length);
+      const initialJobs = filteredJobs.slice(0, initialDisplayCount);
+      
+      const newState = {
         displayedJobs: initialJobs,
-        allJobs: response.jobs,
+        allJobs: response.jobs, // Keep original jobs for filtering
         isLoadingInitial: false,
         isLoadingBackground: response.hasMore,
-        hasMoreToShow: response.jobs.length > initialDisplayCount || response.hasMore,
+        hasMoreToShow: filteredJobs.length > initialDisplayCount || response.hasMore,
         currentDisplayCount: initialDisplayCount,
-        totalAvailable: response.total,
+        totalAvailable: response.jobs.length, // Use actual jobs length, not response.total
         backgroundLoadComplete: !response.hasMore,
-      }));
+        isLoadingMore: false,
+      };
+      
+      console.log(`📄 Initial state: displaying ${initialDisplayCount} of ${response.jobs.length} jobs, hasMoreToShow: ${newState.hasMoreToShow}`);
+      setLoadingState(newState);
       
       setLastUpdateTime(new Date());
       
@@ -205,33 +261,42 @@ export default function JobsScreen() {
   
   /**
    * Load more jobs (next 10 from the already loaded results)
+   * Respects the current filter selection
    */
   const loadMoreJobs = () => {
     if (loadingState.isLoadingMore || !loadingState.hasMoreToShow) {
+      console.log(`🚫 Load more blocked: isLoadingMore=${loadingState.isLoadingMore}, hasMoreToShow=${loadingState.hasMoreToShow}`);
       return;
     }
     
+    console.log(`📄 Loading more jobs: current=${loadingState.currentDisplayCount}, total=${loadingState.allJobs.length}, filter=${selectedFilter}`);
     setLoadingState(prev => ({ ...prev, isLoadingMore: true }));
     
     // Simulate loading delay for better UX
     setTimeout(() => {
-      const nextBatchSize = 10;
-      const newDisplayCount = Math.min(
-        loadingState.currentDisplayCount + nextBatchSize,
-        loadingState.allJobs.length
-      );
-      
-      const newDisplayedJobs = loadingState.allJobs.slice(0, newDisplayCount);
-      
-      setLoadingState(prev => ({
-        ...prev,
-        displayedJobs: newDisplayedJobs,
-        currentDisplayCount: newDisplayCount,
-        isLoadingMore: false,
-        hasMoreToShow: newDisplayCount < prev.allJobs.length,
-      }));
-      
-      console.log(`📄 Loaded more jobs: showing ${newDisplayCount} of ${loadingState.allJobs.length} total`);
+      setLoadingState(prev => {
+        // Apply current filter to all jobs
+        const filteredJobs = applyJobFilter(prev.allJobs, selectedFilter);
+        
+        const nextBatchSize = 10;
+        const newDisplayCount = Math.min(
+          prev.currentDisplayCount + nextBatchSize,
+          filteredJobs.length
+        );
+        
+        const newDisplayedJobs = filteredJobs.slice(0, newDisplayCount);
+        
+        const newState = {
+          ...prev,
+          displayedJobs: newDisplayedJobs,
+          currentDisplayCount: newDisplayCount,
+          isLoadingMore: false,
+          hasMoreToShow: newDisplayCount < filteredJobs.length,
+        };
+        
+        console.log(`📄 Loaded more jobs: showing ${newDisplayCount} of ${filteredJobs.length} filtered total, hasMoreToShow: ${newState.hasMoreToShow}`);
+        return newState;
+      });
     }, 500); // Small delay to show loading state
   };
 
@@ -356,6 +421,34 @@ export default function JobsScreen() {
   );
 
   /**
+   * Handles filter selection and updates displayed jobs
+   * @param filter - Selected filter type
+   */
+  const handleFilterChange = (filter: string) => {
+    console.log(`🔍 Filter changed to: ${filter}`);
+    setSelectedFilter(filter);
+    
+    // Apply filter to all loaded jobs and update displayed jobs
+    setLoadingState(prev => {
+      console.log(`📊 Applying filter "${filter}" to ${prev.allJobs.length} jobs`);
+      const filteredJobs = applyJobFilter(prev.allJobs, filter);
+      console.log(`📊 Filtered jobs count: ${filteredJobs.length}`);
+      
+      const currentDisplayCount = Math.min(prev.currentDisplayCount, filteredJobs.length);
+      const displayedJobs = filteredJobs.slice(0, currentDisplayCount);
+      
+      console.log(`📊 Displaying ${displayedJobs.length} jobs after filter`);
+      console.log(`📊 First 3 job titles after filter:`, displayedJobs.slice(0, 3).map(job => `${job.title} (${job.postedDate}) [ISO: ${job.postedDateISO}]`));
+      
+      return {
+        ...prev,
+        displayedJobs,
+        hasMoreToShow: filteredJobs.length > currentDisplayCount,
+      };
+    });
+  };
+
+  /**
    * Renders filter button
    */
   const renderFilterButton = (filter: string, label: string) => (
@@ -364,7 +457,7 @@ export default function JobsScreen() {
         styles.filterButton,
         selectedFilter === filter && styles.filterButtonActive
       ]}
-      onPress={() => setSelectedFilter(filter)}
+      onPress={() => handleFilterChange(filter)}
       activeOpacity={0.8}
     >
       <Text style={[
@@ -383,6 +476,16 @@ export default function JobsScreen() {
     loadingState: JobLoadingState, 
     onLoadMore: () => void 
   }) => {
+    // Debug logging
+    console.log(`📄 LoadMoreFooter render:`, {
+      hasMoreToShow: loadingState.hasMoreToShow,
+      backgroundLoadComplete: loadingState.backgroundLoadComplete,
+      isLoadingMore: loadingState.isLoadingMore,
+      currentDisplayCount: loadingState.currentDisplayCount,
+      totalAvailable: loadingState.totalAvailable,
+      allJobsLength: loadingState.allJobs.length
+    });
+    
     if (!loadingState.hasMoreToShow && loadingState.backgroundLoadComplete) {
       return (
         <View style={styles.loadMoreContainer}>
@@ -480,6 +583,15 @@ export default function JobsScreen() {
             </Text>
           )}
         </Text>
+        
+        {/* Debug Info - Remove this in production */}
+        {__DEV__ && (
+          <View style={{ backgroundColor: '#f0f0f0', padding: 8, margin: 8, borderRadius: 4 }}>
+            <Text style={{ fontSize: 10, color: '#333' }}>
+              Debug: displayed={loadingState.currentDisplayCount}, total={loadingState.allJobs.length}, hasMore={loadingState.hasMoreToShow ? 'YES' : 'NO'}, bgComplete={loadingState.backgroundLoadComplete ? 'YES' : 'NO'}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Search Info Bar */}
@@ -519,6 +631,7 @@ export default function JobsScreen() {
           data={loadingState.displayedJobs}
           renderItem={renderJobCard}
           keyExtractor={(item) => item.id}
+          key={`jobs-list-${selectedFilter}`}
           contentContainerStyle={styles.jobsList}
           showsVerticalScrollIndicator={false}
           refreshControl={

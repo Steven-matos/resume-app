@@ -12,6 +12,7 @@ export interface Job {
   salary_currency?: string;
   matchRate: number;
   postedDate: string;
+  postedDateISO?: string; // Original ISO date string for sorting
   description: string;
   requirements: string[];
   responsibilities?: string[];

@@ -337,6 +337,7 @@ class JobApiService {
       salary_currency: job.job_salary_currency || 'USD',
       matchRate: this.calculateMatchRate(job),
       postedDate: this.formatPostedDate(job.job_posted_at_datetime_utc || ''),
+      postedDateISO: job.job_posted_at_datetime_utc || '',
       description: job.job_description || 'No description available',
       requirements: this.extractRequirements(job.job_description || ''),
       jobType: job.job_employment_type || 'full-time',
