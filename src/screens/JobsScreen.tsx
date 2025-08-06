@@ -21,6 +21,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { MainTabParamList, RootStackParamList } from '../../App';
 import { Job, JobLoadingState } from '../types/job';
 import { jobApiService } from '../utils/jobApi';
+import { useTheme, useThemeColors } from '../contexts/ThemeContext';
 
 type JobsScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Jobs'>,
@@ -37,6 +38,9 @@ type JobsScreenRouteProp = RouteProp<MainTabParamList, 'Jobs'>;
 export default function JobsScreen() {
   const navigation = useNavigation<JobsScreenNavigationProp>();
   const route = useRoute<JobsScreenRouteProp>();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
+  
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchLocation, setSearchLocation] = useState<string>('');
@@ -539,7 +543,7 @@ export default function JobsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>

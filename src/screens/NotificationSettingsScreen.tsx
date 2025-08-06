@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,8 @@ import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
+import ModernToggle from '../components/ModernToggle';
+import { useTheme } from '../contexts/ThemeContext';
 
 type NotificationSettingsNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -45,6 +47,7 @@ interface NotificationSettings {
  */
 export default function NotificationSettingsScreen() {
   const navigation = useNavigation<NotificationSettingsNavigationProp>();
+  const { isDark } = useTheme();
   
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: true,
@@ -305,7 +308,7 @@ export default function NotificationSettingsScreen() {
   };
 
   /**
-   * Render toggle setting item
+   * Render toggle setting item with modern styling
    */
   const renderToggleItem = (
     title: string,
@@ -315,32 +318,41 @@ export default function NotificationSettingsScreen() {
     value: boolean,
     disabled = false
   ) => (
-    <View style={[styles.settingItem, disabled && styles.disabledItem]}>
-      <View style={styles.settingIcon}>
+    <View style={[
+      styles.settingItem, 
+      { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+      disabled && styles.disabledItem
+    ]}>
+      <View style={[styles.settingIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
         <Ionicons 
           name={icon as any} 
-          size={24} 
-          color={disabled ? '#C7C7CC' : '#007AFF'} 
+          size={22} 
+          color={disabled ? (isDark ? '#48484A' : '#C7C7CC') : (isDark ? '#0A84FF' : '#007AFF')} 
         />
       </View>
       <View style={styles.settingContent}>
-        <Text style={[styles.settingTitle, disabled && styles.disabledText]}>
+        <Text style={[
+          styles.settingTitle, 
+          { color: disabled ? (isDark ? '#48484A' : '#C7C7CC') : (isDark ? '#FFFFFF' : '#000000') }
+        ]}>
           {title}
         </Text>
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+        <Text style={[styles.settingSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+          {subtitle}
+        </Text>
       </View>
-      <Switch
+      <ModernToggle
         value={value}
         onValueChange={(newValue) => handleToggle(settingKey, newValue)}
         disabled={disabled}
-        trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-        thumbColor="#FFFFFF"
+        accessibilityLabel={`Toggle ${title}`}
+        accessibilityHint={subtitle}
       />
     </View>
   );
 
   /**
-   * Render action button item
+   * Render action button item with modern styling
    */
   const renderActionItem = (
     title: string,
@@ -348,32 +360,49 @@ export default function NotificationSettingsScreen() {
     icon: string,
     onPress: () => void,
     rightText?: string,
-    color = '#007AFF'
-  ) => (
-    <TouchableOpacity 
-      style={styles.settingItem} 
-      onPress={onPress} 
-      activeOpacity={0.8}
-    >
-      <View style={styles.settingIcon}>
-        <Ionicons name={icon as any} size={24} color={color} />
-      </View>
-      <View style={styles.settingContent}>
-        <Text style={[styles.settingTitle, { color }]}>{title}</Text>
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
-      </View>
-      <View style={styles.rightContent}>
-        {rightText && <Text style={styles.rightText}>{rightText}</Text>}
-        <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
-      </View>
-    </TouchableOpacity>
-  );
+    color?: string
+  ) => {
+    const isDestructive = color === '#FF3B30';
+    const itemColor = color || (isDark ? '#0A84FF' : '#007AFF');
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.settingItem, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]} 
+        onPress={onPress} 
+        activeOpacity={0.6}
+      >
+        <View style={[styles.settingIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+          <Ionicons name={icon as any} size={22} color={itemColor} />
+        </View>
+        <View style={styles.settingContent}>
+          <Text style={[styles.settingTitle, { color: itemColor }]}>{title}</Text>
+          <Text style={[styles.settingSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+            {subtitle}
+          </Text>
+        </View>
+        <View style={styles.rightContent}>
+          {rightText && (
+            <Text style={[styles.rightText, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+              {rightText}
+            </Text>
+          )}
+          <Ionicons 
+            name="chevron-forward" 
+            size={18} 
+            color={isDark ? '#8E8E93' : '#C7C7CC'} 
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   /**
-   * Render section header
+   * Render section header with modern styling
    */
   const renderSectionHeader = (title: string) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
+    <Text style={[styles.sectionHeader, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+      {title}
+    </Text>
   );
 
   /**
@@ -408,28 +437,41 @@ export default function NotificationSettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F2F2F7' }]}>
         <View style={styles.loadingContainer}>
-          <Text>Loading notification settings...</Text>
+          <Text style={{ color: isDark ? '#FFFFFF' : '#000000' }}>
+            Loading notification settings...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F2F2F7' }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
+      <View style={[styles.header, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={isDark ? '#0A84FF' : '#007AFF'} 
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+          Notifications
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Permission Status */}
         {renderSectionHeader('Permission Status')}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
           <View style={styles.permissionStatus}>
             <View style={styles.permissionIcon}>
               <Ionicons 
@@ -439,10 +481,10 @@ export default function NotificationSettingsScreen() {
               />
             </View>
             <View style={styles.permissionContent}>
-              <Text style={styles.permissionTitle}>
+              <Text style={[styles.permissionTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                 Notifications {getPermissionStatusText()}
               </Text>
-              <Text style={styles.permissionSubtitle}>
+              <Text style={[styles.permissionSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
                 {permissionStatus === 'granted' 
                   ? 'You will receive notifications based on your preferences below.'
                   : 'Enable notifications to receive job alerts and updates.'
@@ -451,7 +493,7 @@ export default function NotificationSettingsScreen() {
             </View>
             {permissionStatus !== 'granted' && (
               <TouchableOpacity 
-                style={styles.enableButton} 
+                style={[styles.enableButton, { backgroundColor: isDark ? '#0A84FF' : '#007AFF' }]} 
                 onPress={requestPermissions}
               >
                 <Text style={styles.enableButtonText}>Enable</Text>
@@ -596,16 +638,22 @@ export default function NotificationSettingsScreen() {
         {__DEV__ && expoPushToken && (
           <>
             {renderSectionHeader('Debug Info')}
-            <View style={styles.section}>
+            <View style={[styles.section, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
               <View style={styles.debugItem}>
-                <Text style={styles.debugTitle}>Expo Push Token:</Text>
-                <Text style={styles.debugText} numberOfLines={2}>
+                <Text style={[styles.debugTitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+                  Expo Push Token:
+                </Text>
+                <Text style={[styles.debugText, { color: isDark ? '#FFFFFF' : '#000000' }]} numberOfLines={2}>
                   {expoPushToken}
                 </Text>
               </View>
               <View style={styles.debugItem}>
-                <Text style={styles.debugTitle}>Permission Status:</Text>
-                <Text style={styles.debugText}>{permissionStatus}</Text>
+                <Text style={[styles.debugTitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+                  Permission Status:
+                </Text>
+                <Text style={[styles.debugText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                  {permissionStatus}
+                </Text>
               </View>
             </View>
           </>
@@ -618,30 +666,37 @@ export default function NotificationSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(60, 60, 67, 0.29)',
+    // Modern iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   backButton: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
     flex: 1,
     textAlign: 'center',
-    marginRight: 32,
+    marginRight: 36,
   },
   headerSpacer: {
-    width: 32,
+    width: 36,
   },
   loadingContainer: {
     flex: 1,
@@ -649,68 +704,81 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 50,
   },
   sectionHeader: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 32,
-    marginBottom: 12,
+    letterSpacing: 0.6,
+    marginTop: 35,
+    marginBottom: 8,
     marginLeft: 4,
   },
   section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
+    marginBottom: 20,
+    // Modern iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 54,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(60, 60, 67, 0.12)',
   },
   disabledItem: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   settingIcon: {
-    marginRight: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   settingContent: {
     flex: 1,
+    paddingRight: 8,
   },
   settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    marginBottom: 2,
-  },
-  disabledText: {
-    color: '#C7C7CC',
+    fontSize: 17,
+    fontWeight: '400',
+    lineHeight: 22,
+    marginBottom: 1,
   },
   settingSubtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 15,
+    lineHeight: 20,
   },
   rightContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    maxWidth: 120,
   },
   rightText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    marginRight: 8,
+    fontSize: 17,
+    marginRight: 6,
+    textAlign: 'right',
   },
   permissionStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   permissionIcon: {
     marginRight: 16,
@@ -719,42 +787,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   permissionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
+    lineHeight: 22,
     marginBottom: 4,
   },
   permissionSubtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 15,
     lineHeight: 20,
   },
   enableButton: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   enableButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   debugItem: {
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(60, 60, 67, 0.12)',
   },
   debugTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
     marginBottom: 4,
   },
   debugText: {
     fontSize: 12,
-    color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 16,
   },
 });

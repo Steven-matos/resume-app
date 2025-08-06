@@ -19,6 +19,7 @@ import { MainTabParamList, RootStackParamList } from '../../App';
 import { jobApiService } from '../utils/jobApi';
 import { Job } from '../types/job';
 import { recentSearchesManager, RecentSearch } from '../utils/recentSearches';
+import { useTheme, useThemeColors } from '../contexts/ThemeContext';
 
 type SearchScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Search'>,
@@ -31,6 +32,9 @@ type SearchScreenNavigationProp = CompositeNavigationProp<
  */
 export default function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [location, setLocation] = useState('');
@@ -330,7 +334,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Search Header */}
         <View style={styles.header}>

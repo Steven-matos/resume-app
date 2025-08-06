@@ -5,7 +5,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 import { initializeNotificationService } from './src/utils/notificationService';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -37,10 +39,12 @@ const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 /**
- * Main tab navigator component
+ * Main tab navigator component with theme support
  * Handles the bottom tab navigation between Home, Search, Jobs, and Profile
  */
 function MainTabNavigator() {
+  const { isDark } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -61,8 +65,13 @@ function MainTabNavigator() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: isDark ? '#0A84FF' : '#007AFF',
+        tabBarInactiveTintColor: isDark ? '#EBEBF599' : '#3C3C4399',
+        tabBarStyle: {
+          backgroundColor: isDark ? '#1C1C1E' : '#F9F9F9',
+          borderTopColor: isDark ? '#38383A' : '#E5E5EA',
+          borderTopWidth: StyleSheet.hairlineWidth,
+        },
         headerShown: false,
       })}
     >
@@ -75,10 +84,11 @@ function MainTabNavigator() {
 }
 
 /**
- * Main app component with navigation setup
- * Wraps the entire app with SafeAreaProvider and NavigationContainer
+ * App content component with theme-aware navigation
  */
-export default function App() {
+function AppContent() {
+  const { isDark } = useTheme();
+  
   /**
    * Initialize notification service on app startup
    */
@@ -107,55 +117,73 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+        <Stack.Screen 
+          name="UploadResume" 
+          component={UploadResumeScreen}
+          options={{
+            headerShown: true,
+            title: 'Upload Resume',
+            headerStyle: {
+              backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+            },
+            headerTintColor: isDark ? '#FFFFFF' : '#000000',
+            headerTitleStyle: {
+              color: isDark ? '#FFFFFF' : '#000000',
+            },
+          }}
+        />
+        <Stack.Screen 
+          name="JobDetails" 
+          component={JobDetailsScreen}
+          options={{
+            headerShown: true,
+            title: 'Job Details',
+            headerStyle: {
+              backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+            },
+            headerTintColor: isDark ? '#FFFFFF' : '#000000',
+            headerTitleStyle: {
+              color: isDark ? '#FFFFFF' : '#000000',
+            },
+          }}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{
             headerShown: false,
           }}
-        >
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-          <Stack.Screen 
-            name="UploadResume" 
-            component={UploadResumeScreen}
-            options={{
-              headerShown: true,
-              title: 'Upload Resume',
-              headerStyle: {
-                backgroundColor: '#FFFFFF',
-              },
-              headerTintColor: '#000000',
-            }}
-          />
-          <Stack.Screen 
-            name="JobDetails" 
-            component={JobDetailsScreen}
-            options={{
-              headerShown: true,
-              title: 'Job Details',
-              headerStyle: {
-                backgroundColor: '#FFFFFF',
-              },
-              headerTintColor: '#000000',
-            }}
-          />
-          <Stack.Screen 
-            name="Settings" 
-            component={SettingsScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen 
-            name="NotificationSettings" 
-            component={NotificationSettingsScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <StatusBar style="auto" />
+        />
+        <Stack.Screen 
+          name="NotificationSettings" 
+          component={NotificationSettingsScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack.Navigator>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </NavigationContainer>
+  );
+}
+
+/**
+ * Main app component with theme provider
+ * Wraps the entire app with ThemeProvider, SafeAreaProvider and NavigationContainer
+ */
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

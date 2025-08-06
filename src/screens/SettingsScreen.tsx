@@ -5,9 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
   Alert,
-  useColorScheme,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,11 +14,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
+import ModernToggle from '../components/ModernToggle';
+import { useTheme } from '../contexts/ThemeContext';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 interface SettingsState {
-  darkMode: boolean;
   notifications: boolean;
   jobAlerts: boolean;
   emailNotifications: boolean;
@@ -38,10 +38,9 @@ interface SettingsState {
  */
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
-  const systemColorScheme = useColorScheme();
+  const { isDark, themeMode, toggleTheme } = useTheme();
   
   const [settings, setSettings] = useState<SettingsState>({
-    darkMode: systemColorScheme === 'dark',
     notifications: true,
     jobAlerts: true,
     emailNotifications: true,
@@ -107,6 +106,13 @@ export default function SettingsScreen() {
         [{ text: 'OK' }]
       );
     }
+  };
+
+  /**
+   * Handle dark mode toggle
+   */
+  const handleDarkModeToggle = () => {
+    toggleTheme();
   };
 
   /**
@@ -194,7 +200,7 @@ export default function SettingsScreen() {
   };
 
   /**
-   * Render setting item with toggle switch
+   * Render setting item with modern toggle switch
    */
   const renderToggleItem = (
     title: string,
@@ -203,19 +209,27 @@ export default function SettingsScreen() {
     settingKey: keyof SettingsState,
     value: boolean
   ) => (
-    <View style={styles.settingItem}>
-      <View style={styles.settingIcon}>
-        <Ionicons name={icon as any} size={24} color="#007AFF" />
+    <View style={[styles.settingItem, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
+      <View style={[styles.settingIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+        <Ionicons 
+          name={icon as any} 
+          size={22} 
+          color={isDark ? '#0A84FF' : '#007AFF'} 
+        />
       </View>
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+        <Text style={[styles.settingTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+          {title}
+        </Text>
+        <Text style={[styles.settingSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+          {subtitle}
+        </Text>
       </View>
-      <Switch
+      <ModernToggle
         value={value}
         onValueChange={(newValue) => handleToggle(settingKey, newValue)}
-        trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-        thumbColor="#FFFFFF"
+        accessibilityLabel={`Toggle ${title}`}
+        accessibilityHint={subtitle}
       />
     </View>
   );
@@ -228,28 +242,56 @@ export default function SettingsScreen() {
     subtitle: string,
     icon: string,
     onPress: () => void,
-    rightText?: string
+    rightText?: string,
+    isDestructive?: boolean
   ) => (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.settingIcon}>
-        <Ionicons name={icon as any} size={24} color="#007AFF" />
+    <TouchableOpacity 
+      style={[styles.settingItem, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]} 
+      onPress={onPress} 
+      activeOpacity={0.6}
+    >
+      <View style={[styles.settingIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+        <Ionicons 
+          name={icon as any} 
+          size={22} 
+          color={isDestructive ? '#FF3B30' : (isDark ? '#0A84FF' : '#007AFF')} 
+        />
       </View>
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+        <Text style={[
+          styles.settingTitle, 
+          { 
+            color: isDestructive ? '#FF3B30' : (isDark ? '#FFFFFF' : '#000000')
+          }
+        ]}>
+          {title}
+        </Text>
+        <Text style={[styles.settingSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+          {subtitle}
+        </Text>
       </View>
       <View style={styles.rightContent}>
-        {rightText && <Text style={styles.rightText}>{rightText}</Text>}
-        <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
+        {rightText && (
+          <Text style={[styles.rightText, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+            {rightText}
+          </Text>
+        )}
+        <Ionicons 
+          name="chevron-forward" 
+          size={18} 
+          color={isDark ? '#8E8E93' : '#C7C7CC'} 
+        />
       </View>
     </TouchableOpacity>
   );
 
   /**
-   * Render section header
+   * Render section header with modern styling
    */
   const renderSectionHeader = (title: string) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
+    <Text style={[styles.sectionHeader, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+      {title}
+    </Text>
   );
 
   if (isLoading) {
@@ -263,16 +305,27 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F2F2F7' }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
+      <View style={[styles.header, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={isDark ? '#0A84FF' : '#007AFF'} 
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+          Settings
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Notifications Section */}
         {renderSectionHeader('Notifications')}
         <View style={styles.section}>
@@ -308,13 +361,29 @@ export default function SettingsScreen() {
         {/* App Preferences Section */}
         {renderSectionHeader('App Preferences')}
         <View style={styles.section}>
-          {renderToggleItem(
-            'Dark Mode',
-            'Use dark theme throughout the app',
-            'moon-outline',
-            'darkMode',
-            settings.darkMode
-          )}
+          <View style={[styles.settingItem, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
+            <View style={[styles.settingIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+              <Ionicons 
+                name="moon-outline" 
+                size={22} 
+                color={isDark ? '#0A84FF' : '#007AFF'} 
+              />
+            </View>
+            <View style={styles.settingContent}>
+              <Text style={[styles.settingTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                Dark Mode
+              </Text>
+              <Text style={[styles.settingSubtitle, { color: isDark ? '#8E8E93' : '#6D6D70' }]}>
+                {themeMode === 'system' ? 'Follow system setting' : `${themeMode === 'dark' ? 'Dark' : 'Light'} mode enabled`}
+              </Text>
+            </View>
+            <ModernToggle
+              value={themeMode === 'dark' || (themeMode === 'system' && isDark)}
+              onValueChange={handleDarkModeToggle}
+              accessibilityLabel="Toggle Dark Mode"
+              accessibilityHint="Switch between light and dark theme"
+            />
+          </View>
           {renderToggleItem(
             'Sound Effects',
             'Play sounds for notifications and actions',
@@ -360,7 +429,9 @@ export default function SettingsScreen() {
             'Clear App Data',
             'Remove all saved data and preferences',
             'trash-outline',
-            handleClearData
+            handleClearData,
+            undefined,
+            true // isDestructive
           )}
         </View>
 
@@ -401,30 +472,37 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(60, 60, 67, 0.29)',
+    // Modern iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   backButton: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
     flex: 1,
     textAlign: 'center',
-    marginRight: 32, // Compensate for back button
+    marginRight: 36, // Compensate for back button
   },
   headerSpacer: {
-    width: 32,
+    width: 36,
   },
   loadingContainer: {
     flex: 1,
@@ -432,55 +510,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 50,
   },
   sectionHeader: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 32,
-    marginBottom: 12,
+    letterSpacing: 0.6,
+    marginTop: 35,
+    marginBottom: 8,
     marginLeft: 4,
   },
   section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
+    marginBottom: 20,
+    // Modern iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 54,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(60, 60, 67, 0.12)',
   },
   settingIcon: {
-    marginRight: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   settingContent: {
     flex: 1,
+    paddingRight: 8,
   },
   settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    marginBottom: 2,
+    fontSize: 17,
+    fontWeight: '400',
+    lineHeight: 22,
+    marginBottom: 1,
   },
   settingSubtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 15,
+    lineHeight: 20,
   },
   rightContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    maxWidth: 120,
   },
   rightText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    marginRight: 8,
+    fontSize: 17,
+    marginRight: 6,
+    textAlign: 'right',
   },
 });

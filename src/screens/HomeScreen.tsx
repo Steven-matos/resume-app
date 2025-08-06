@@ -14,6 +14,8 @@ import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MainTabParamList, RootStackParamList } from '../../App';
+import { useTheme, useThemeColors, useThemeShadows } from '../contexts/ThemeContext';
+import { useCommonThemedStyles } from '../hooks/useThemedStyles';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -26,6 +28,10 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
  */
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
+  const shadows = useThemeShadows();
+  const commonStyles = useCommonThemedStyles();
 
   /**
    * Navigates to the upload resume screen
@@ -35,12 +41,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={commonStyles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.subtitle}>
+          <Text style={commonStyles.title1}>Welcome back!</Text>
+          <Text style={commonStyles.subheadline}>
             Ready to find your next opportunity?
           </Text>
         </View>
@@ -48,63 +54,72 @@ export default function HomeScreen() {
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity
-            style={styles.actionCard}
+            style={[commonStyles.card, styles.actionCard]}
             onPress={handleUploadResume}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="cloud-upload" size={32} color="#007AFF" />
+            <View style={[commonStyles.iconContainer, { backgroundColor: colors.accent + '20' }]}>
+              <Ionicons name="cloud-upload" size={24} color={colors.accent} />
             </View>
-            <Text style={styles.actionTitle}>Upload Resume</Text>
-            <Text style={styles.actionSubtitle}>
-              Get matched with jobs and recommendations
-            </Text>
+            <View style={styles.actionContent}>
+              <Text style={commonStyles.headline}>Upload Resume</Text>
+              <Text style={commonStyles.footnote}>
+                Get matched with jobs and recommendations
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.tertiaryLabel} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionCard}
+            style={[commonStyles.card, styles.actionCard]}
             onPress={() => navigation.navigate('Jobs')}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="briefcase" size={32} color="#34C759" />
+            <View style={[commonStyles.iconContainer, { backgroundColor: colors.success + '20' }]}>
+              <Ionicons name="briefcase" size={24} color={colors.success} />
             </View>
-            <Text style={styles.actionTitle}>Browse Jobs</Text>
-            <Text style={styles.actionSubtitle}>
-              View your matched opportunities
-            </Text>
+            <View style={styles.actionContent}>
+              <Text style={commonStyles.headline}>Browse Jobs</Text>
+              <Text style={commonStyles.footnote}>
+                View your matched opportunities
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.tertiaryLabel} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionCard}
+            style={[commonStyles.card, styles.actionCard]}
             onPress={() => navigation.navigate('Search')}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="search" size={32} color="#FF9500" />
+            <View style={[commonStyles.iconContainer, { backgroundColor: colors.warning + '20' }]}>
+              <Ionicons name="search" size={24} color={colors.warning} />
             </View>
-            <Text style={styles.actionTitle}>Search Jobs</Text>
-            <Text style={styles.actionSubtitle}>
-              Find specific positions
-            </Text>
+            <View style={styles.actionContent}>
+              <Text style={commonStyles.headline}>Search Jobs</Text>
+              <Text style={commonStyles.footnote}>
+                Find specific positions
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.tertiaryLabel} />
           </TouchableOpacity>
         </View>
 
         {/* Stats Section */}
         <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Your Activity</Text>
+          <Text style={[commonStyles.title3, { marginBottom: 16 }]}>Your Activity</Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>12</Text>
-              <Text style={styles.statLabel}>Jobs Matched</Text>
+            <View style={[commonStyles.compactCard, styles.statCard]}>
+              <Text style={[commonStyles.title2, { color: colors.accent }]}>12</Text>
+              <Text style={commonStyles.caption1}>Jobs Matched</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>3</Text>
-              <Text style={styles.statLabel}>Applications</Text>
+            <View style={[commonStyles.compactCard, styles.statCard]}>
+              <Text style={[commonStyles.title2, { color: colors.success }]}>3</Text>
+              <Text style={commonStyles.caption1}>Applications</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>85%</Text>
-              <Text style={styles.statLabel}>Match Rate</Text>
+            <View style={[commonStyles.compactCard, styles.statCard]}>
+              <Text style={[commonStyles.title2, { color: colors.warning }]}>85%</Text>
+              <Text style={commonStyles.caption1}>Match Rate</Text>
             </View>
           </View>
         </View>
@@ -117,83 +132,38 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 32,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-    lineHeight: 22,
   },
   quickActions: {
     marginBottom: 32,
   },
   actionCard: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 0, // Override card margin
   },
-  actionIcon: {
-    marginBottom: 12,
-  },
-  actionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  actionSubtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    lineHeight: 18,
+  actionContent: {
+    flex: 1,
+    marginLeft: 4,
   },
   statsSection: {
     marginBottom: 32,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 16,
-  },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
     alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    textAlign: 'center',
+    paddingVertical: 16,
+    marginVertical: 0, // Override card margin
   },
 }); 

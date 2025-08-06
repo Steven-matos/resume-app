@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import NotificationDemo from '../components/NotificationDemo';
+import { useTheme, useThemeColors } from '../contexts/ThemeContext';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -22,6 +23,8 @@ type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
  */
 export default function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
   /**
    * Mock user data
    */
@@ -121,7 +124,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
