@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { initializeNotificationService } from './src/utils/notificationService';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -13,12 +14,16 @@ import JobsScreen from './src/screens/JobsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import UploadResumeScreen from './src/screens/UploadResumeScreen';
 import JobDetailsScreen from './src/screens/JobDetailsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen';
 
 // Navigation types
 export type RootStackParamList = {
   MainTabs: undefined;
   UploadResume: undefined;
   JobDetails: { jobId: string };
+  Settings: undefined;
+  NotificationSettings: undefined;
 };
 
 export type MainTabParamList = {
@@ -74,6 +79,33 @@ function MainTabNavigator() {
  * Wraps the entire app with SafeAreaProvider and NavigationContainer
  */
 export default function App() {
+  /**
+   * Initialize notification service on app startup
+   */
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    const initNotifications = async () => {
+      try {
+        const result = await initializeNotificationService();
+        if (typeof result === 'function') {
+          cleanup = result;
+        }
+      } catch (error) {
+        console.error('Failed to initialize notification service:', error);
+      }
+    };
+
+    initNotifications();
+
+    // Cleanup function
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
@@ -105,6 +137,20 @@ export default function App() {
                 backgroundColor: '#FFFFFF',
               },
               headerTintColor: '#000000',
+            }}
+          />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="NotificationSettings" 
+            component={NotificationSettingsScreen}
+            options={{
+              headerShown: false,
             }}
           />
         </Stack.Navigator>

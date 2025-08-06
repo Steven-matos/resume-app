@@ -9,12 +9,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
+import NotificationDemo from '../components/NotificationDemo';
+
+type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 /**
  * ProfileScreen component
  * Displays user profile information and settings
  */
 export default function ProfileScreen() {
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   /**
    * Mock user data
    */
@@ -58,14 +65,14 @@ export default function ProfileScreen() {
       title: 'Notifications',
       subtitle: 'Manage your notification preferences',
       icon: 'notifications-outline',
-      action: () => Alert.alert('Notifications', 'Notification settings'),
+      action: () => navigation.navigate('NotificationSettings'),
     },
     {
       id: 'settings',
       title: 'Settings',
       subtitle: 'App preferences and account settings',
       icon: 'settings-outline',
-      action: () => Alert.alert('Settings', 'App settings'),
+      action: () => navigation.navigate('Settings'),
     },
     {
       id: 'help',
@@ -145,6 +152,13 @@ export default function ProfileScreen() {
             {menuItems.map(renderMenuItem)}
           </View>
         </View>
+
+        {/* Notification Demo Section (Development Mode) */}
+        {__DEV__ && (
+          <View style={styles.menuSection}>
+            <NotificationDemo />
+          </View>
+        )}
 
         {/* Logout Button */}
         <TouchableOpacity
